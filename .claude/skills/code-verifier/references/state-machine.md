@@ -1,6 +1,6 @@
 # State Machine
 
-This reference is authoritative for `state/code-verifier-state.json`.
+This reference is authoritative for `code-verifier-state.json`, located by searching the entire project directory. The default creation path is `<project-root>/docs/code-verifier/code-verifier-state.json`.
 
 ## States
 
@@ -26,7 +26,8 @@ This reference is authoritative for `state/code-verifier-state.json`.
 ```json
 {
   "status": "preflight",
-  "criteriaPath": "path/to/example.md"
+  "criteriaPath": "path/to/example.md",
+  "verifierDir": "docs/code-verifier"
 }
 ```
 
@@ -36,6 +37,7 @@ This reference is authoritative for `state/code-verifier-state.json`.
 {
   "status": "await-request",
   "criteriaPath": "path/to/example.md",
+  "verifierDir": "docs/code-verifier",
   "feedbackCount": 0,
   "verificationType": "initial"
 }
@@ -47,6 +49,7 @@ This reference is authoritative for `state/code-verifier-state.json`.
 {
   "status": "await-request",
   "criteriaPath": "path/to/example.md",
+  "verifierDir": "docs/code-verifier",
   "latestScore": 82,
   "feedbackCount": 1,
   "verificationType": "recheck"
@@ -59,9 +62,10 @@ This reference is authoritative for `state/code-verifier-state.json`.
 {
   "status": "processing-request",
   "criteriaPath": "path/to/example.md",
+  "verifierDir": "docs/code-verifier",
   "feedbackCount": 2,
   "verificationType": "recheck",
-  "feedbackPath": "path/to/example-feedback-2.md"
+  "feedbackPath": "docs/code-verifier/example-feedback-2.md"
 }
 ```
 
@@ -71,10 +75,11 @@ This reference is authoritative for `state/code-verifier-state.json`.
 {
   "status": "processing-request",
   "criteriaPath": "path/to/example.md",
+  "verifierDir": "docs/code-verifier",
   "latestScore": 82,
   "feedbackCount": 2,
   "verificationType": "recheck",
-  "feedbackPath": "path/to/example-feedback-2.md"
+  "feedbackPath": "docs/code-verifier/example-feedback-2.md"
 }
 ```
 
@@ -84,6 +89,7 @@ This reference is authoritative for `state/code-verifier-state.json`.
 {
   "status": "await-summary",
   "criteriaPath": "path/to/example.md",
+  "verifierDir": "docs/code-verifier",
   "latestScore": 94,
   "feedbackCount": 2,
   "verificationType": "recheck"
@@ -96,22 +102,24 @@ This reference is authoritative for `state/code-verifier-state.json`.
 {
   "status": "process-summary",
   "criteriaPath": "path/to/example.md",
+  "verifierDir": "docs/code-verifier",
   "latestScore": 94,
   "feedbackCount": 2,
   "verificationType": "recheck",
-  "summaryPath": "path/to/example-feedback-summary.md"
+  "summaryPath": "docs/code-verifier/example-feedback-summary.md"
 }
 ```
 
 ## Field Rules
 
-- `criteriaPath` is required in every non-idle state.
+- `criteriaPath` is required in every non-idle state. Must be a project-relative path (e.g. `docs/plans/example.md`). Never store as an absolute path; absolute paths break cross-machine sync.
+- `verifierDir` is required in every non-idle state. It is always `docs/code-verifier` — the flat directory where all feedback, summary, and state files are stored.
 - `feedbackCount` is required from `await-request` onward.
 - `verificationType` is required from `await-request` onward.
 - `latestScore` is the score of the latest completed feedback pass only. It never describes an in-progress or interrupted `processing-request`.
 - `latestScore` is required after at least one review pass.
-- `feedbackPath` exists only in `processing-request` and must point to a file in the same directory as `criteriaPath`.
-- `summaryPath` exists only in `process-summary` and must point to a file in the same directory as `criteriaPath`.
+- `feedbackPath` exists only in `processing-request` and must point to a file inside `verifierDir`.
+- `summaryPath` exists only in `process-summary` and must point to a file inside `verifierDir`.
 - `feedbackCount` means the latest allocated feedback number for the active criteria.
 - In `await-request`, `feedbackCount: 0` means initial verification; `feedbackCount >= 1` means recheck.
 - `verificationType` records the current request type. When entering `processing-request`, first store the current count as `preIncrementFeedbackCount`, calculate `verificationType` from that value, then increment `feedbackCount`.
@@ -124,7 +132,7 @@ This reference is authoritative for `state/code-verifier-state.json`.
 | `preflight` | git diff exists | `idle` | Ask user to clear/commit diff; do not read criteria. |
 | `preflight` | criteria invalid | `idle` | Report missing plan requirements/verification criteria. |
 | `preflight` | criteria valid | `await-request` | Summarize criteria only; wait for verification start. |
-| `await-request` | user requests verification | `processing-request` | Store `preIncrementFeedbackCount`; set `verificationType` from it; increment `feedbackCount`; set `feedbackPath` in the criteria directory from the incremented count. |
+| `await-request` | user requests verification | `processing-request` | Store `preIncrementFeedbackCount`; set `verificationType` from it; increment `feedbackCount`; set `feedbackPath` in `verifierDir` from the incremented count. |
 | `processing-request` | feedback written | score branch | Save `latestScore` before branching. |
 | score branch | `latestScore < 90` | `await-request` | Keep same criteria; set `verificationType` to `recheck`. |
 | score branch | `latestScore >= 90` | `await-summary` | Ask whether to summarize feedback. |

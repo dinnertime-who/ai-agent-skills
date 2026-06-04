@@ -40,10 +40,10 @@ Below 90, keep the same criteria locked until a later verification reaches 90 or
 Feedback file location and name:
 
 ```text
-<criteria-directory>/<criteria-basename>-feedback-<feedbackCount>.md
+<project-root>/docs/code-verifier/<criteria-basename>-feedback-<feedbackCount>.md
 ```
 
-Store every feedback file in the same directory as the criteria file.
+Store every feedback file inside `verifierDir` (`docs/code-verifier/`), not next to the criteria file.
 
 If the target feedback file already exists:
 
@@ -81,7 +81,7 @@ If at least one feedback file is available:
 
 1. Summarize only available feedback files.
 2. Record missing ignored feedback files in `Notes`.
-3. Write or merge `<criteria-directory>/<criteria-basename>-feedback-summary.md` using `assets/summary-template.md`.
+3. Write or merge `<project-root>/docs/code-verifier/<criteria-basename>-feedback-summary.md` using `assets/summary-template.md`.
 4. Fix the list of feedback files actually used by the summary.
 5. Delete only those used feedback files.
 6. Set state to `{ "status": "idle" }`.

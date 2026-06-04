@@ -11,8 +11,8 @@ Act as a verifier, not an implementer. Do not modify product code unless the use
 
 At the start of every verifier turn:
 
-1. Read `<skill-dir>/state/code-verifier-state.json` before reading criteria, inspecting diff/code, or writing artifacts.
-2. If the state file is missing, treat it as `{ "status": "idle" }`.
+1. Search the entire project directory for `code-verifier-state.json`. Use the first one found if multiple exist (log a warning if more than one is found).
+2. If no `code-verifier-state.json` exists anywhere in the project, treat state as `{ "status": "idle" }`.
 3. Normalize interrupted transient states using `references/state-machine.md`.
 4. Reject any action that is not allowed by the active state.
 5. If `status` is not `idle`, reject other criteria paths; the stored `criteriaPath` is locked.
@@ -34,7 +34,7 @@ Load only what is needed:
 
 ## High-Level Flow
 
-State file path: `<skill-dir>/state/code-verifier-state.json`. Create `state/` if needed.
+State file path: `<project-root>/docs/code-verifier/code-verifier-state.json`. This is the default location when creating a new session; create the directory if needed. The file may exist elsewhere if the user placed it there previously.
 
 Supported statuses and resume rules are defined in `references/state-machine.md`. Never continue a transient action from the middle.
 
@@ -42,7 +42,7 @@ Supported statuses and resume rules are defined in `references/state-machine.md`
 
 When `idle` and the user provides criteria or asks for verification:
 
-1. Set state to `preflight` with `criteriaPath`.
+1. Set state to `preflight` with `criteriaPath` stored as a project-relative path (never absolute).
 2. Run `git diff --stat` and `git diff --name-only`.
 3. If any diff exists, ask the user to clear/commit it, set `idle`, and do not read criteria.
 4. If clean, read only criteria and validate implementation requirements plus verification criteria.
@@ -54,7 +54,7 @@ When `await-request` and the user explicitly requests verification:
 1. Store the current `feedbackCount` as `preIncrementFeedbackCount`.
 2. Set `verificationType` from `preIncrementFeedbackCount`: `0` means `initial`; `1+` means `recheck`.
 3. Increment `feedbackCount` by 1.
-4. Set `feedbackPath` in the same directory as `criteriaPath`: `<criteria-basename>-feedback-<feedbackCount>.md`, using the incremented count.
+4. Set `feedbackPath` under the verifier directory: `<project-root>/docs/code-verifier/<criteria-basename>-feedback-<feedbackCount>.md`, using the incremented count.
 5. Set state to `processing-request`.
 6. Run `references/review-workflow.md` and write/merge feedback.
 7. Save `latestScore` first, then branch:
@@ -76,11 +76,14 @@ Write user-facing responses and feedback in the user's language unless asked oth
 
 ## File Naming
 
+All verifier artifacts live under `<project-root>/docs/code-verifier/`.
+
 For `example.md`, write:
 
-- Feedback: `example-feedback-<feedbackCount>.md`
-- Summary: `example-feedback-summary.md`
+- State: `docs/code-verifier/code-verifier-state.json` (default; actual location found by project-wide search)
+- Feedback: `docs/code-verifier/example-feedback-<feedbackCount>.md`
+- Summary: `docs/code-verifier/example-feedback-summary.md`
 
-Always store feedback and summary files in the same directory as the criteria file.
+The criteria file itself stays in its original location and is never moved or copied.
 
 If a target file already exists, compare it with the relevant template. Overwrite it only when structurally incomplete. If structurally valid, merge old and new content using the section rules in `references/review-workflow.md`.
